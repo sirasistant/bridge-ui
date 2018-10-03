@@ -49,6 +49,7 @@ const networks = {
   4: 'Rinkeby',
   42:'Kovan',
   77:'Sokol',
+  26634:'VPchain',
   99:'Network'
 }
 

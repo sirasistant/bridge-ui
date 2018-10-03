@@ -5,9 +5,9 @@ import ForeignStore from './ForeignStore'
 import AlertStore from './AlertStore'
 import GasPriceStore from './GasPriceStore'
 import TxStore from './TxStore'
-import { abi as HOME_ERC_ABI } from '../contracts/HomeBridgeErcToErc';
+import { abi as FOREIGN_ERC_ABI } from '../contracts/ForeignBridgeErcToErc';
 import { getWeb3Instance } from './utils/web3'
-import { getErc677TokenAddress } from './utils/contract'
+import { getErc20TokenAddress } from './utils/contract'
 
 class RootStore {
   constructor() {
@@ -23,10 +23,10 @@ class RootStore {
 
   @action
   async setBridgeMode() {
-    const homeWeb3 = getWeb3Instance(process.env.REACT_APP_HOME_HTTP_PARITY_URL)
-    const homeBridge = new homeWeb3.eth.Contract(HOME_ERC_ABI, process.env.REACT_APP_HOME_BRIDGE_ADDRESS)
+    const foreignWeb3 = getWeb3Instance(process.env.REACT_APP_FOREIGN_BRIDGE_ADDRESS)
+    const foreignBridge = new foreignWeb3.eth.Contract(FOREIGN_ERC_ABI, process.env.REACT_APP_FOREIGN_BRIDGE_ADDRESS)
     try {
-      await getErc677TokenAddress(homeBridge)
+      await getErc20TokenAddress(foreignBridge)
       this.isErcToErcMode = true
     } catch (e) {
       this.isErcToErcMode = false

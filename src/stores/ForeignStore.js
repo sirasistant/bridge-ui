@@ -2,7 +2,7 @@ import { action, observable } from 'mobx';
 import { abi as FOREIGN_NATIVE_ABI } from '../contracts/ForeignBridgeNativeToErc.json';
 import { abi as FOREIGN_ERC_ABI } from '../contracts/ForeignBridgeErcToErc';
 import { abi as ERC677_ABI } from '../contracts/ERC677BridgeToken.json';
-import { getBlockNumber, getExplorerUrl } from './utils/web3'
+import { getBlockNumber, getExplorerUrl, getBalance } from './utils/web3'
 import {
   getMaxPerTxLimit,
   getMinPerTxLimit,
@@ -54,16 +54,18 @@ class ForeignStore {
     const FOREIGN_ABI = this.rootStore.isErcToErcMode ? FOREIGN_ERC_ABI : FOREIGN_NATIVE_ABI
     this.foreignBridge = new this.foreignWeb3.eth.Contract(FOREIGN_ABI, this.FOREIGN_BRIDGE_ADDRESS);
     await this.getBlockNumber()
-    await this.getTokenInfo()
+    if(this.rootStore.isErcToErcMode){
+      await this.getTokenInfo()
+    }
     this.getMinPerTxLimit()
     this.getMaxPerTxLimit()
     this.getEvents()
-    this.getTokenBalance()
+    this.getBalance()
     this.getCurrentLimit()
     setInterval(() => {
       this.getBlockNumber()
       this.getEvents()
-      this.getTokenBalance()
+      this.getBalance()
       this.getCurrentLimit()
     }, 15000)
   }
@@ -107,13 +109,17 @@ class ForeignStore {
   }
 
   @action
-  async getTokenBalance(){
+  async getBalance(){
     try {
-      this.totalSupply = await getTotalSupply(this.tokenContract)
-      this.web3Store.getWeb3Promise.then(async () => {
-        this.balance = await getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address)
-        balanceLoaded()
-      })
+      if(this.rootStore.isErcToErcMode){
+        this.totalSupply = await getTotalSupply(this.tokenContract)
+        this.web3Store.getWeb3Promise.then(async () => {
+          this.balance = await getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address)
+          balanceLoaded()
+        })
+      }else{
+        this.balance = await getBalance(this.foreignWeb3, this.FOREIGN_BRIDGE_ADDRESS)
+      }
     } catch(e) {
       console.error(e)
     }
@@ -134,7 +140,7 @@ class ForeignStore {
         const confirmationEvents = foreignEvents.filter((event) => event.event === "RelayedMessage" && this.waitingForConfirmation.has(event.returnValues.transactionHash))
         confirmationEvents.forEach(async event => {
           const TxReceipt = await this.getTxReceipt(event.transactionHash)
-          if(TxReceipt && TxReceipt.logs && TxReceipt.logs.length > 1 && this.waitingForConfirmation.size) {
+          if(TxReceipt && TxReceipt.logs && TxReceipt.logs.length > 0 && this.waitingForConfirmation.size) {
             this.alertStore.setLoadingStepIndex(3)
             const urlExplorer = getExplorerUrl(this.web3Store.foreignNet.id) + 'tx/' + event.transactionHash
             setTimeout(() => {
@@ -218,6 +224,10 @@ class ForeignStore {
 
   getDailyQuotaCompleted() {
     return this.dailyLimit ? this.totalSpentPerDay / this.dailyLimit * 100 : 0
+  }
+
+  getDisplayedBalance() {
+    return this.rootStore.isErcToErcMode? this.userBalance : this.web3Store.defaultAccount.foreignBalance
   }
 
 }

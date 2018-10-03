@@ -84,8 +84,7 @@ export class Bridge extends React.Component {
       alertStore.pushError("Insufficient balance")
     } else {
       try {
-        alertStore.setLoading(true)
-        if (isErcToErcMode) {
+        alertStore.setLoading(true);
           return txStore.erc677transferAndCall({
             to: homeStore.HOME_BRIDGE_ADDRESS,
             from: web3Store.defaultAccount.address,
@@ -93,14 +92,6 @@ export class Bridge extends React.Component {
             contract: homeStore.tokenContract,
             tokenAddress: homeStore.tokenAddress
           })
-        } else {
-          return txStore.doSend({
-            to: homeStore.HOME_BRIDGE_ADDRESS,
-            from: web3Store.defaultAccount.address,
-            value: Web3Utils.toHex(Web3Utils.toWei(amount)),
-            data: '0x'
-          })
-        }
       } catch (e) {
         console.error(e)
       }
@@ -126,8 +117,8 @@ export class Bridge extends React.Component {
       alertStore.pushError(`The amount is above current daily limit.\nThe max withdrawal today: ${foreignStore.maxCurrentDeposit} ${foreignStore.symbol}`)
       return
     }
-    if(isGreaterThan(amount, foreignStore.balance)){
-      alertStore.pushError(`Insufficient token balance. Your balance is ${foreignStore.balance} ${foreignStore.symbol}`)
+    if(isGreaterThan(amount, foreignStore.getDisplayedBalance())){
+      alertStore.pushError(`Insufficient token balance. Your balance is ${foreignStore.getDisplayedBalance()} ${foreignStore.symbol}`)
     } else {
       try {
         alertStore.setLoading(true)
@@ -138,12 +129,11 @@ export class Bridge extends React.Component {
             value: Web3Utils.toWei(amount)
           })
         } else {
-          return await txStore.erc677transferAndCall({
+          return await txStore.doSend({
             to: foreignStore.FOREIGN_BRIDGE_ADDRESS,
             from: web3Store.defaultAccount.address,
             value: Web3Utils.toHex(Web3Utils.toWei(amount)),
-            contract: foreignStore.tokenContract,
-            tokenAddress: foreignStore.tokenAddress
+            data: '0x'
           })
         }
       } catch(e) {
@@ -267,8 +257,8 @@ export class Bridge extends React.Component {
     if(showModal && Object.keys(modalData).length !== 0) {
       if(modalData.isHome && modalData.balance !== homeStore.getDisplayedBalance()) {
         modalData.balance = homeStore.getDisplayedBalance()
-      } else if(!modalData.isHome && modalData.balance !== foreignStore.balance) {
-        modalData.balance= foreignStore.balance
+      } else if(!modalData.isHome && modalData.balance !== foreignStore.getDisplayedBalance()) {
+        modalData.balance= foreignStore.getDisplayedBalance()
       }
     }
 
@@ -291,7 +281,7 @@ export class Bridge extends React.Component {
                   showModal={reverse ? this.loadForeignDetails : this.loadHomeDetails}
                   networkData={reverse ? web3Store.foreignNet : web3Store.homeNet}
                   currency={reverse ? foreignStore.symbol : homeStore.symbol}
-                  balance={reverse ? foreignStore.balance : homeStore.getDisplayedBalance()} />
+                  balance={reverse ? foreignStore.getDisplayedBalance() : homeStore.getDisplayedBalance()} />
                 <BridgeForm
                   displayArrow={!web3Store.metamaskNotSetted}
                   reverse={reverse}
@@ -304,7 +294,7 @@ export class Bridge extends React.Component {
                   showModal={reverse ? this.loadHomeDetails : this.loadForeignDetails}
                   networkData={reverse ? web3Store.homeNet : web3Store.foreignNet}
                   currency={reverse ? homeStore.symbol : foreignStore.symbol}
-                  balance={reverse ? homeStore.getDisplayedBalance() : foreignStore.balance} />
+                  balance={reverse ? homeStore.getDisplayedBalance() : foreignStore.getDisplayedBalance()} />
               </div>
             </div>
             <div className="right-image-wrapper">

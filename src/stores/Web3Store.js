@@ -5,7 +5,7 @@ import swal from 'sweetalert'
 
 class Web3Store {
   @observable injectedWeb3 = {};
-  @observable defaultAccount = {address: '', homeBalance: ''};
+  @observable defaultAccount = {address: '', foreignBalance: ''};
 
   @observable homeWeb3 = {};
   @observable foreignWeb3 = {};
@@ -78,7 +78,7 @@ class Web3Store {
         }
         this.defaultAccount.address = accounts[0]
       }
-      this.defaultAccount.homeBalance = await getBalance(this.homeWeb3, this.defaultAccount.address)
+      this.defaultAccount.foreignBalance = await getBalance(this.foreignWeb3, this.defaultAccount.address)
       if(accountUpdated) {
         await this.rootStore.foreignStore.getTokenBalance()
         await this.rootStore.homeStore.getBalance()

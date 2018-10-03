@@ -73,10 +73,8 @@ class HomeStore {
     }
     const HOME_ABI = this.rootStore.isErcToErcMode ? HOME_ERC_ABI : HOME_NATIVE_ABI
     this.homeBridge = new this.homeWeb3.eth.Contract(HOME_ABI, this.HOME_BRIDGE_ADDRESS);
-    if (this.rootStore.isErcToErcMode) {
-        this.getTokenInfo()
-    }
     await this.getBlockNumber()
+    await this.getTokenInfo()
     this.getMinPerTxLimit()
     this.getMaxPerTxLimit()
     this.getEvents()
@@ -135,15 +133,11 @@ class HomeStore {
   @action
   async getBalance() {
     try {
-      if (this.rootStore.isErcToErcMode) {
         this.balance = await getTotalSupply(this.tokenContract)
         this.web3Store.getWeb3Promise.then(async () => {
           this.userBalance = await getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address)
           balanceLoaded()
         })
-      } else {
-        this.balance = await getBalance(this.homeWeb3, this.HOME_BRIDGE_ADDRESS)
-      }
     } catch(e) {
       console.error(e)
       this.errors.push(e)
@@ -318,7 +312,7 @@ class HomeStore {
   }
 
   getDisplayedBalance() {
-    return this.rootStore.isErcToErcMode ? this.userBalance : this.web3Store.defaultAccount.homeBalance
+    return this.userBalance 
   }
 }
 
